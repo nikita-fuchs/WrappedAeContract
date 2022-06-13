@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+import "@openzeppelin/contracts@4.6.0/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts@4.6.0/token/ERC20/extensions/ERC20Burnable.sol";
+
+/// @custom:security-contact info@aeternity.org
+contract WrappedAeternity is ERC20, ERC20Burnable {
+    constructor(address _admin1, address _admin2, address _admin3) ERC20("Wrapped Aeternity", "WAE") {
+        admin1 = _admin1;
+        admin2 = _admin2;
+        admin3 = _admin3;
+    }
+
+    mapping(address => bytes32) public multiSigHashes;
+
+    address public admin1;
+    address public admin2;
+    address public admin3;
+
+
+    modifier multiSigRequired() {
+        // check if transaction sender is admin.
+        require (msg.sender == admin1 || msg.sender == admin2 || msg.sender == admin3);
+        // if yes, store his msg.data. 
+        multiSigHashes[msg.sender] = keccak256(msg.data);
+        // check if all three stored msg.data hash equals to the one of the other admins
+        if (
+            (multiSigHashes[admin1] == multiSigHashes[admin2]) 
+            &&
+            (multiSigHashes[admin2] == multiSigHashes[admin3])
+            &&
+            (multiSigHashes[admin1] == multiSigHashes[admin3])
+           ) {
+            // if yes, all three admins agreed - continue.
+            _;
+
+            // Reset hashes after successful execution
+            multiSigHashes[admin1] = 0x0;
+            multiSigHashes[admin2] = 0x0;
+            multiSigHashes[admin3] = 0x0;
+        } else {
+            // if not (yet), return.
+            return;
+        }
+    }
+
+    function mint(address to, uint256 amount) public multiSigRequired {
+        _mint(to, amount);
+    }
+}

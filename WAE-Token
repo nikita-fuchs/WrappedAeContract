@@ -18,7 +18,6 @@ contract WrappedAeternity is ERC20, ERC20Burnable {
     address public admin2;
     address public admin3;
 
-
     modifier multiSigRequired() {
         // check if transaction sender is admin.
         require (msg.sender == admin1 || msg.sender == admin2 || msg.sender == admin3);
@@ -27,9 +26,9 @@ contract WrappedAeternity is ERC20, ERC20Burnable {
         // check if all three stored msg.data hash equals to the one of the other admins
         if (
             (multiSigHashes[admin1] == multiSigHashes[admin2]) 
-            &&
+            ||
             (multiSigHashes[admin2] == multiSigHashes[admin3])
-            &&
+            ||
             (multiSigHashes[admin1] == multiSigHashes[admin3])
            ) {
             // if yes, all three admins agreed - continue.

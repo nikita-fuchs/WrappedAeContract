@@ -27,6 +27,7 @@ contract WrappedAeternity is ERC20, ERC20Burnable {
         cleanupSignatures();
     }
 
+    event wrapped(uint256, address);
     mapping(address => bytes32) public multiSigHashes;
 
     address public admin1;
@@ -60,8 +61,9 @@ contract WrappedAeternity is ERC20, ERC20Burnable {
         }
     }
 
-    function mint(address to, uint256 amount) public multiSigRequired(amount) {
-        _mint(to, amount);
+    function mint(address _to, uint256 _amount) public multiSigRequired(_amount) {
+        _mint(_to, _amount);
+        emit wrapped(_amount, _to);
     }
 
     //deleteme

@@ -7,9 +7,24 @@ import "@openzeppelin/contracts@4.6.0/token/ERC20/extensions/ERC20Burnable.sol";
 /// @custom:security-contact info@aeternity.org
 contract WrappedAeternity is ERC20, ERC20Burnable {
     constructor(address _admin1, address _admin2, address _admin3) ERC20("Wrapped Aeternity", "WAE") {
+
+        
+        // make sure the addresses are unique
+        require(_admin1 != _admin2);
+        require(_admin2 != _admin3);
+        require(_admin1 != _admin3);
+
+        require(_admin1 != address(0x0));
+        require(_admin2 != address(0x0));
+        require(_admin3 != address(0x0));
+        
+                //set admins
         admin1 = _admin1;
         admin2 = _admin2;
         admin3 = _admin3;
+
+        // set bogus initial signatures, so multisig works properly;
+        cleanupSignatures();
     }
 
     mapping(address => bytes32) public multiSigHashes;
@@ -18,7 +33,10 @@ contract WrappedAeternity is ERC20, ERC20Burnable {
     address public admin2;
     address public admin3;
 
-    modifier multiSigRequired() {
+    modifier multiSigRequired(uint256 amount) {
+        // check amount
+        require (amount > 0, "token amount is zero");
+
         // check if transaction sender is admin.
         require (msg.sender == admin1 || msg.sender == admin2 || msg.sender == admin3);
         // if yes, store his msg.data. 
@@ -35,16 +53,34 @@ contract WrappedAeternity is ERC20, ERC20Burnable {
             _;
 
             // Reset hashes after successful execution
-            multiSigHashes[admin1] = 0x0;
-            multiSigHashes[admin2] = 0x0;
-            multiSigHashes[admin3] = 0x0;
+            cleanupSignatures();
         } else {
             // if not (yet), return.
             return;
         }
     }
 
-    function mint(address to, uint256 amount) public multiSigRequired {
+    function mint(address to, uint256 amount) public multiSigRequired(amount) {
         _mint(to, amount);
     }
+
+    //deleteme
+    function cleanupSignatures() private {
+        multiSigHashes[admin1] = sha256(toBytes(admin1));
+        multiSigHashes[admin2] = sha256(toBytes(admin2));
+        multiSigHashes[admin2] = sha256(toBytes(admin3));
+    }
+
+    // explicitly convert address to bytes for the hashing function. 
+    // see https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
+    function toBytes(address a) public pure returns (bytes memory b){
+    assembly {
+        let m := mload(0x40)
+        a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+        mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
+        mstore(0x40, add(m, 52))
+        b := m
+   }
+}
+
 }

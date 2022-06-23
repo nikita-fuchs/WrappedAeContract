@@ -68,9 +68,9 @@ contract WrappedAeternity is ERC20, ERC20Burnable {
 
     //deleteme
     function cleanupSignatures() private {
-        multiSigHashes[admin1] = sha256(toBytes(admin1));
-        multiSigHashes[admin2] = sha256(toBytes(admin2));
-        multiSigHashes[admin2] = sha256(toBytes(admin3));
+        multiSigHashes[admin1] = keccak256("foo");
+        multiSigHashes[admin2] = keccak256("bar");
+        multiSigHashes[admin3] = keccak256("baz");
     }
 
     // explicitly convert address to bytes for the hashing function. 
@@ -86,3 +86,4 @@ contract WrappedAeternity is ERC20, ERC20Burnable {
 }
 
 }
+
